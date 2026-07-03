@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>网站时长榜</title>
+    <link rel="stylesheet" href="./popup.css">
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="popup-header">
+        <h1>网站时长榜</h1>
+        <span class="header-note">按时长排序</span>
+      </header>
+
+      <section class="summary-panel" aria-live="polite">
+        <span class="summary-label" id="summary-label">今日总使用</span>
+        <strong class="summary-value" id="summary-value">0s</strong>
+      </section>
+
+      <nav class="range-tabs" aria-label="时间范围">
+        <button class="range-tab is-active" type="button" data-range="today">今日</button>
+        <button class="range-tab" type="button" data-range="week">7 天</button>
+        <button class="range-tab" type="button" data-range="total">总计</button>
+      </nav>
+
+      <section class="leaderboard" aria-label="网站使用时长榜单">
+        <div class="empty-state" id="empty-state">当前范围还没有记录</div>
+        <ol class="site-list" id="site-list"></ol>
+      </section>
+    </main>
+
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

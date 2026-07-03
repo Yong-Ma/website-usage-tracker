@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "网站时长榜",
+  "description": "记录当前激活网站的使用时长，并在弹窗中按时长展示榜单。",
+  "version": "0.1.0",
+  "permissions": ["tabs", "storage", "idle", "alarms"],
+  "action": {
+    "default_title": "网站时长榜",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "32": "assets/icon-32.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  }
+}

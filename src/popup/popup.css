@@ -1,0 +1,168 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: #172033;
+  background: #f4f6f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 360px;
+  min-height: 430px;
+  margin: 0;
+  background: #f4f6f8;
+}
+
+button {
+  font: inherit;
+}
+
+.popup-shell {
+  padding: 16px;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.popup-header h1 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 750;
+}
+
+.header-note {
+  color: #667085;
+  font-size: 12px;
+}
+
+.summary-panel {
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.summary-label {
+  display: block;
+  color: #667085;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.summary-value {
+  display: block;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+.range-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.range-tab {
+  height: 34px;
+  border: 1px solid #d9dee8;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #344054;
+  cursor: pointer;
+}
+
+.range-tab:hover {
+  background: #eef2f6;
+}
+
+.range-tab.is-active {
+  background: #172033;
+  border-color: #172033;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.leaderboard {
+  min-height: 240px;
+}
+
+.empty-state {
+  display: none;
+  padding: 36px 12px;
+  color: #667085;
+  text-align: center;
+  border: 1px dashed #cfd6e1;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.empty-state.is-visible {
+  display: block;
+}
+
+.site-list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.site-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.site-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  border: 1px solid #e3e7ee;
+  background: #f4f6f8;
+  object-fit: contain;
+}
+
+.site-meta {
+  min-width: 0;
+}
+
+.site-rank {
+  display: block;
+  margin-bottom: 2px;
+  color: #667085;
+  font-size: 11px;
+}
+
+.site-origin {
+  overflow: hidden;
+  color: #172033;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-duration {
+  color: #172033;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}

@@ -42,6 +42,7 @@
 - `tabs`：读取当前激活标签页的 URL 和 favicon URL。
 - `storage`：把使用时长数据持久化到本地。
 - `idle`：当 Chrome 判断用户 idle 或锁屏时暂停统计。
+- `alarms`：定期唤醒后台 service worker，flush 当前会话，降低 MV3 后台生命周期导致的漏记风险。
 
 不需要 host permissions，因为插件只读取 `tabs` 权限暴露的标签页元数据，不向网页注入脚本。
 
@@ -122,10 +123,13 @@ service worker 监听以下事件：
 - `chrome.tabs.onUpdated`
 - `chrome.windows.onFocusChanged`
 - `chrome.idle.onStateChanged`
+- `chrome.alarms.onAlarm`
 - `chrome.runtime.onStartup`
 - `chrome.runtime.onInstalled`
 
 在启动和安装事件中，service worker 会重新计算当前活动标签页状态，不假设之前的内存会话仍然有效。
+
+后台会创建一个每分钟触发一次的 `usage-heartbeat` alarm。每次触发时先把当前会话累计到本地存储，再重新计算当前激活标签页并继续计时。
 
 ## 弹窗 UI
 

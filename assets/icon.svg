@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="网站时长榜">
+  <rect width="128" height="128" rx="26" fill="#172033"/>
+  <circle cx="64" cy="64" r="40" fill="#ffffff"/>
+  <path d="M64 34a30 30 0 1 0 30 30h-8a22 22 0 1 1-22-22v-8Z" fill="#2d7ff9"/>
+  <path d="M64 44v22l17 10" fill="none" stroke="#172033" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
