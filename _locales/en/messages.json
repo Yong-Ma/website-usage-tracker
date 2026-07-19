@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "Website Time Board"
+  },
+  "extensionDescription": {
+    "message": "Tracks time spent on active websites and ranks them by duration in the popup."
+  }
+}

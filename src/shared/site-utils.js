@@ -28,18 +28,24 @@ export function getRecentDateKeys(today = new Date(), count = 7) {
   });
 }
 
-export function formatDuration(totalSeconds) {
+export function formatDuration(totalSeconds, language = 'en') {
   const seconds = Math.max(0, Math.floor(totalSeconds));
+  const isChinese = language === 'zh';
+
   if (seconds < 60) {
-    return `${seconds}s`;
+    return isChinese ? `${seconds}秒` : `${seconds}s`;
   }
 
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) {
-    return `${minutes}m`;
+    return isChinese ? `${minutes}分${seconds % 60}秒` : `${minutes}m${seconds % 60}s`;
   }
 
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  if (hours < 24) {
+    return isChinese ? `${hours}小时${minutes % 60}分` : `${hours}h${minutes % 60}m`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return isChinese ? `${days}天${hours % 24}小时` : `${days}d${hours % 24}h`;
 }

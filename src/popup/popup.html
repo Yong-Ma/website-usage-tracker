@@ -9,22 +9,64 @@
   <body>
     <main class="popup-shell">
       <header class="popup-header">
-        <h1>网站时长榜</h1>
-        <span class="header-note">按时长排序</span>
+        <h1 id="app-title">网站时长榜</h1>
+        <div class="settings-control">
+          <button
+            class="settings-button"
+            id="settings-toggle"
+            type="button"
+            aria-label="打开设置"
+            aria-expanded="false"
+            aria-controls="settings-panel"
+          >⚙</button>
+          <div class="settings-panel" id="settings-panel" hidden>
+            <div class="setting-row setting-row-inline">
+              <div class="setting-copy">
+                <span class="setting-label" id="pause-tracking-label">暂停统计</span>
+                <span class="setting-hint" id="pause-tracking-hint">开启后暂停记录网站使用时长</span>
+              </div>
+              <button
+                class="pause-switch"
+                id="pause-tracking-switch"
+                type="button"
+                role="switch"
+                aria-checked="false"
+                aria-labelledby="pause-tracking-label"
+                aria-describedby="pause-tracking-hint"
+              >
+                <span class="switch-thumb"></span>
+              </button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label" id="language-setting-label">语言</span>
+              <div class="language-options" id="language-options" role="radiogroup" aria-labelledby="language-setting-label">
+                <button class="language-option" type="button" role="radio" data-language="zh">中文</button>
+                <button class="language-option" type="button" role="radio" data-language="en">English</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </header>
 
       <section class="summary-panel" aria-live="polite">
-        <span class="summary-label" id="summary-label">今日总使用</span>
-        <strong class="summary-value" id="summary-value">0s</strong>
+        <div class="summary-content">
+          <span class="summary-label" id="summary-label">今日总使用</span>
+          <strong class="summary-value" id="summary-value">0s</strong>
+        </div>
+        <button class="clear-today-button" id="clear-today" type="button">清空</button>
       </section>
 
-      <nav class="range-tabs" aria-label="时间范围">
+      <nav class="range-tabs" id="range-tabs" aria-label="时间范围">
         <button class="range-tab is-active" type="button" data-range="today">今日</button>
         <button class="range-tab" type="button" data-range="week">7 天</button>
         <button class="range-tab" type="button" data-range="total">总计</button>
       </nav>
 
-      <section class="leaderboard" aria-label="网站使用时长榜单">
+      <div class="actions-row">
+        <span class="clear-status" id="clear-status" role="status" aria-live="polite"></span>
+      </div>
+
+      <section class="leaderboard" id="leaderboard" aria-label="网站使用时长榜单">
         <div class="empty-state" id="empty-state">当前范围还没有记录</div>
         <ol class="site-list" id="site-list"></ol>
       </section>

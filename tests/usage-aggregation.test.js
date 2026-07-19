@@ -76,3 +76,37 @@ test('aggregateUsage breaks ties by latest visit and then origin', () => {
     'https://b.example',
   ]);
 });
+
+test('aggregateUsage returns only the top ten rows while keeping the full total', () => {
+  const sites = Object.fromEntries(
+    Array.from({ length: 12 }, (_, index) => {
+      const rank = index + 1;
+      const origin = `https://site-${rank}.example`;
+      return [
+        origin,
+        {
+          origin,
+          seconds: rank,
+          lastVisitedAt: rank,
+        },
+      ];
+    }),
+  );
+
+  const result = aggregateUsage({ '2026-07-04': sites }, 'today', new Date(2026, 6, 4));
+
+  assert.equal(result.rows.length, 10);
+  assert.deepEqual(result.rows.map((row) => row.origin), [
+    'https://site-12.example',
+    'https://site-11.example',
+    'https://site-10.example',
+    'https://site-9.example',
+    'https://site-8.example',
+    'https://site-7.example',
+    'https://site-6.example',
+    'https://site-5.example',
+    'https://site-4.example',
+    'https://site-3.example',
+  ]);
+  assert.equal(result.totalSeconds, 78);
+});

@@ -1,5 +1,7 @@
 import { getLocalDateKey, getRecentDateKeys } from './site-utils.js';
 
+const MAX_RANKING_ROWS = 10;
+
 export function aggregateUsage(usageByDate = {}, range = 'today', today = new Date()) {
   const dateKeys = getDateKeysForRange(usageByDate, range, today);
   const byOrigin = new Map();
@@ -39,9 +41,11 @@ export function aggregateUsage(usageByDate = {}, range = 'today', today = new Da
     return a.origin.localeCompare(b.origin);
   });
 
+  const totalSeconds = rows.reduce((sum, row) => sum + row.seconds, 0);
+
   return {
-    rows,
-    totalSeconds: rows.reduce((sum, row) => sum + row.seconds, 0),
+    rows: rows.slice(0, MAX_RANKING_ROWS),
+    totalSeconds,
   };
 }
 

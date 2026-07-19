@@ -1,6 +1,13 @@
 import { canonicalizeUrl } from '../shared/site-utils.js';
 import { createSession, calculateElapsedSeconds } from '../shared/session.js';
-import { addUsageSeconds } from './storage.js';
+import { clearStoredSession, readStoredSession, writeStoredSession } from './session-store.js';
+import {
+  addUsageSeconds,
+  clearUsageForRange,
+  deleteUsageForOrigin,
+  isTrackingPaused,
+  setTrackingPaused,
+} from './storage.js';
 
 let activeSession = null;
 let idleState = 'active';
@@ -45,6 +52,65 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (
+    message?.type !== 'clearUsage'
+    && message?.type !== 'clearTodayUsage'
+    && message?.type !== 'deleteUsageForOrigin'
+    && message?.type !== 'setTrackingPaused'
+  ) {
+    return false;
+  }
+
+  if (message?.type === 'setTrackingPaused') {
+    queueSetTrackingPaused(message.isPaused === true)
+      .then(() => {
+        sendResponse({ ok: true });
+      })
+      .catch((error) => {
+        console.error('Failed to update tracking pause setting', error);
+        sendResponse({
+          ok: false,
+          error: error?.message || '设置失败，请重试',
+        });
+      });
+
+    return true;
+  }
+
+  if (message?.type === 'deleteUsageForOrigin') {
+    queueDeleteUsageForOrigin(message.origin, message.range)
+      .then(() => {
+        sendResponse({ ok: true });
+      })
+      .catch((error) => {
+        console.error('Failed to delete usage for origin', error);
+        sendResponse({
+          ok: false,
+          error: error?.message || '删除失败，请重试',
+        });
+      });
+
+    return true;
+  }
+
+  const range = message?.type === 'clearTodayUsage' ? 'today' : message?.range;
+
+  queueClearUsage(range)
+    .then(() => {
+      sendResponse({ ok: true });
+    })
+    .catch((error) => {
+      console.error('Failed to clear usage', error);
+      sendResponse({
+        ok: false,
+        error: error?.message || '清空失败，请重试',
+      });
+    });
+
+  return true;
+});
+
 chrome.idle.queryState(60, (state) => {
   idleState = state;
   ensureHeartbeatAlarm();
@@ -64,26 +130,97 @@ function ensureHeartbeatAlarm() {
   chrome.alarms.create('usage-heartbeat', { periodInMinutes: 1 });
 }
 
+function queueClearUsage(range) {
+  const clearPromise = refreshQueue.then(() => clearUsage(range));
+  refreshQueue = clearPromise.catch((error) => {
+    console.error('Failed to clear usage', error);
+  });
+  return clearPromise;
+}
+
+function queueDeleteUsageForOrigin(origin, range) {
+  const deletePromise = refreshQueue.then(() => deleteUsageForOriginFromRange(origin, range));
+  refreshQueue = deletePromise.catch((error) => {
+    console.error('Failed to delete usage for origin', error);
+  });
+  return deletePromise;
+}
+
+function queueSetTrackingPaused(isPaused) {
+  const pausePromise = refreshQueue.then(() => updateTrackingPaused(isPaused));
+  refreshQueue = pausePromise.catch((error) => {
+    console.error('Failed to update tracking pause setting', error);
+  });
+  return pausePromise;
+}
+
+async function clearUsage(range, now = Date.now()) {
+  if (!['today', 'week', 'total'].includes(range)) {
+    throw new Error('未知的清空范围');
+  }
+
+  activeSession = null;
+  await clearStoredSession();
+  await clearUsageForRange(range, new Date(now));
+  await refreshActiveSession();
+}
+
+async function deleteUsageForOriginFromRange(origin, range, now = Date.now()) {
+  if (!origin) {
+    throw new Error('缺少要删除的网站');
+  }
+
+  if (!['today', 'week', 'total'].includes(range)) {
+    throw new Error('未知的删除范围');
+  }
+
+  await flushActiveSession(now);
+  await deleteUsageForOrigin(origin, range, new Date(now));
+  await refreshActiveSession();
+}
+
 async function refreshActiveSession(updatedTab = null) {
   const now = Date.now();
+  if (await isTrackingPaused()) {
+    activeSession = null;
+    await clearStoredSession();
+    return;
+  }
+
   await flushActiveSession(now);
 
   const tab = await getCurrentActiveTab(updatedTab);
   const nextSession = getSessionFromTab(tab, now);
   activeSession = nextSession;
+  await writeActiveSession(nextSession);
+}
+
+async function updateTrackingPaused(isPaused, now = Date.now()) {
+  if (isPaused) {
+    await flushActiveSession(now);
+    await setTrackingPaused(true);
+    activeSession = null;
+    await clearStoredSession();
+    return;
+  }
+
+  await setTrackingPaused(false);
+  await refreshActiveSession();
 }
 
 async function flushActiveSession(now = Date.now()) {
-  const elapsedSeconds = calculateElapsedSeconds(activeSession, now);
+  const session = activeSession ?? await readStoredSession();
+  const elapsedSeconds = calculateElapsedSeconds(session, now);
   if (elapsedSeconds > 0) {
     await addUsageSeconds({
-      origin: activeSession.origin,
-      faviconUrl: activeSession.faviconUrl,
+      origin: session.origin,
+      faviconUrl: session.faviconUrl,
       seconds: elapsedSeconds,
       visitedAt: now,
     });
   }
   activeSession = null;
+  await clearStoredSession();
 }
 
 async function getCurrentActiveTab(updatedTab) {
@@ -133,4 +270,12 @@ function getSessionFromTab(tab, now) {
   }
 
   return createSession(origin, tab.favIconUrl || '', now);
+}
+
+async function writeActiveSession(session) {
+  if (session) {
+    await writeStoredSession(session);
+  } else {
+    await clearStoredSession();
+  }
 }

@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "网站时长榜"
+  },
+  "extensionDescription": {
+    "message": "记录当前激活网站的使用时长，并在弹窗中按时长展示榜单。"
+  }
+}
