@@ -5,9 +5,11 @@ import {
   clearUsageForRange,
   deleteUsageForOrigin,
   isTrackingPaused,
+  readAllData,
   readExcludedOrigins,
   setTrackingPaused,
   setOriginExcluded,
+  writeAllData,
 } from '../src/background/storage.js';
 
 function createMemoryStorage(initialData = {}) {
@@ -15,6 +17,9 @@ function createMemoryStorage(initialData = {}) {
   return {
     data,
     async get(key) {
+      if (Array.isArray(key)) {
+        return Object.fromEntries(key.map((name) => [name, data[name]]));
+      }
       return { [key]: data[key] };
     },
     async set(values) {
@@ -22,6 +27,57 @@ function createMemoryStorage(initialData = {}) {
     },
   };
 }
+
+test('readAllData returns normalized persistent extension data', async () => {
+  const storage = createMemoryStorage({
+    usageByDate: { '2026-07-05': { 'https://example.com': { seconds: 60 } } },
+    trackingPaused: true,
+    excludedOrigins: ['https://github.com', 123],
+    popupLanguage: 'zh',
+  });
+
+  assert.deepEqual(await readAllData(storage), {
+    usageByDate: { '2026-07-05': { 'https://example.com': { seconds: 60 } } },
+    trackingPaused: true,
+    excludedOrigins: ['https://github.com'],
+    popupLanguage: 'zh',
+  });
+});
+
+test('readAllData uses safe defaults for missing or invalid settings', async () => {
+  const storage = createMemoryStorage({
+    usageByDate: [],
+    trackingPaused: 'yes',
+    excludedOrigins: 'github',
+    popupLanguage: 'fr',
+  });
+
+  assert.deepEqual(await readAllData(storage), {
+    usageByDate: {},
+    trackingPaused: false,
+    excludedOrigins: [],
+    popupLanguage: 'en',
+  });
+});
+
+test('writeAllData replaces all persistent extension data in one write', async () => {
+  const storage = createMemoryStorage({
+    usageByDate: { old: {} },
+    trackingPaused: false,
+    excludedOrigins: ['https://old.example'],
+    popupLanguage: 'en',
+  });
+  const data = {
+    usageByDate: { '2026-07-05': { 'https://example.com': { seconds: 60 } } },
+    trackingPaused: true,
+    excludedOrigins: ['https://github.com'],
+    popupLanguage: 'zh',
+  };
+
+  await writeAllData(data, storage);
+
+  assert.deepEqual(storage.data, data);
+});
 
 test('clearUsageForDate removes only the requested local date bucket', async () => {
   const storage = createMemoryStorage({

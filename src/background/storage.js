@@ -7,6 +7,34 @@ import {
 const STORAGE_KEY = 'usageByDate';
 const TRACKING_PAUSED_KEY = 'trackingPaused';
 const EXCLUDED_ORIGINS_KEY = 'excludedOrigins';
+const POPUP_LANGUAGE_KEY = 'popupLanguage';
+
+export async function readAllData(storage = chrome.storage.local) {
+  const result = await storage.get([
+    STORAGE_KEY,
+    TRACKING_PAUSED_KEY,
+    EXCLUDED_ORIGINS_KEY,
+    POPUP_LANGUAGE_KEY,
+  ]);
+
+  return {
+    usageByDate: isPlainObject(result?.[STORAGE_KEY]) ? result[STORAGE_KEY] : {},
+    trackingPaused: result?.[TRACKING_PAUSED_KEY] === true,
+    excludedOrigins: Array.isArray(result?.[EXCLUDED_ORIGINS_KEY])
+      ? result[EXCLUDED_ORIGINS_KEY].filter((origin) => typeof origin === 'string')
+      : [],
+    popupLanguage: result?.[POPUP_LANGUAGE_KEY] === 'zh' ? 'zh' : 'en',
+  };
+}
+
+export async function writeAllData(data, storage = chrome.storage.local) {
+  await storage.set({
+    [STORAGE_KEY]: data.usageByDate,
+    [TRACKING_PAUSED_KEY]: data.trackingPaused,
+    [EXCLUDED_ORIGINS_KEY]: data.excludedOrigins,
+    [POPUP_LANGUAGE_KEY]: data.popupLanguage,
+  });
+}
 
 export async function readUsageByDate() {
   const result = await chrome.storage.local.get(STORAGE_KEY);
