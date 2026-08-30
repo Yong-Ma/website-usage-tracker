@@ -1,7 +1,12 @@
-import { getLocalDateKey, getRecentDateKeys } from '../shared/site-utils.js';
+import {
+  canonicalizeUrl,
+  getLocalDateKey,
+  getRecentDateKeys,
+} from '../shared/site-utils.js';
 
 const STORAGE_KEY = 'usageByDate';
 const TRACKING_PAUSED_KEY = 'trackingPaused';
+const EXCLUDED_ORIGINS_KEY = 'excludedOrigins';
 
 export async function readUsageByDate() {
   const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -16,6 +21,28 @@ export async function isTrackingPaused(storage = chrome.storage.local) {
 
 export async function setTrackingPaused(isPaused, storage = chrome.storage.local) {
   await storage.set({ [TRACKING_PAUSED_KEY]: isPaused === true });
+}
+
+export async function readExcludedOrigins(storage = chrome.storage.local) {
+  const result = await storage.get(EXCLUDED_ORIGINS_KEY);
+  const origins = result?.[EXCLUDED_ORIGINS_KEY];
+  return Array.isArray(origins)
+    ? origins.filter((origin) => typeof origin === 'string')
+    : [];
+}
+
+export async function setOriginExcluded(origin, isExcluded, storage = chrome.storage.local) {
+  const canonicalOrigin = canonicalizeUrl(origin);
+  if (!canonicalOrigin) {
+    throw new Error('无效的网站');
+  }
+
+  const currentOrigins = await readExcludedOrigins(storage);
+  const nextOrigins = isExcluded === true
+    ? Array.from(new Set([...currentOrigins, canonicalOrigin]))
+    : currentOrigins.filter((currentOrigin) => currentOrigin !== canonicalOrigin);
+
+  await storage.set({ [EXCLUDED_ORIGINS_KEY]: nextOrigins });
 }
 
 export async function clearUsageForDate(date = new Date(), storage = chrome.storage.local) {

@@ -6,6 +6,8 @@ import {
   clearUsageForRange,
   deleteUsageForOrigin,
   isTrackingPaused,
+  readExcludedOrigins,
+  setOriginExcluded,
   setTrackingPaused,
 } from './storage.js';
 
@@ -57,6 +59,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     message?.type !== 'clearUsage'
     && message?.type !== 'clearTodayUsage'
     && message?.type !== 'deleteUsageForOrigin'
+    && message?.type !== 'setOriginExcluded'
     && message?.type !== 'setTrackingPaused'
   ) {
     return false;
@@ -88,6 +91,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({
           ok: false,
           error: error?.message || '删除失败，请重试',
+        });
+      });
+
+    return true;
+  }
+
+  if (message?.type === 'setOriginExcluded') {
+    queueSetOriginExcluded(message.origin, message.isExcluded === true)
+      .then(() => {
+        sendResponse({ ok: true });
+      })
+      .catch((error) => {
+        console.error('Failed to update excluded origins', error);
+        sendResponse({
+          ok: false,
+          error: error?.message || '排除设置失败，请重试',
         });
       });
 
@@ -154,6 +173,14 @@ function queueSetTrackingPaused(isPaused) {
   return pausePromise;
 }
 
+function queueSetOriginExcluded(origin, isExcluded) {
+  const excludePromise = refreshQueue.then(() => updateOriginExcluded(origin, isExcluded));
+  refreshQueue = excludePromise.catch((error) => {
+    console.error('Failed to update excluded origins', error);
+  });
+  return excludePromise;
+}
+
 async function clearUsage(range, now = Date.now()) {
   if (!['today', 'week', 'total'].includes(range)) {
     throw new Error('未知的清空范围');
@@ -191,8 +218,19 @@ async function refreshActiveSession(updatedTab = null) {
 
   const tab = await getCurrentActiveTab(updatedTab);
   const nextSession = getSessionFromTab(tab, now);
+  if (nextSession && await isOriginExcluded(nextSession.origin)) {
+    activeSession = null;
+    await clearStoredSession();
+    return;
+  }
+
   activeSession = nextSession;
   await writeActiveSession(nextSession);
+}
+
+async function isOriginExcluded(origin) {
+  const excludedOrigins = await readExcludedOrigins();
+  return excludedOrigins.includes(origin);
 }
 
 async function updateTrackingPaused(isPaused, now = Date.now()) {
@@ -205,6 +243,20 @@ async function updateTrackingPaused(isPaused, now = Date.now()) {
   }
 
   await setTrackingPaused(false);
+  await refreshActiveSession();
+}
+
+async function updateOriginExcluded(origin, isExcluded, now = Date.now()) {
+  const canonicalOrigin = canonicalizeUrl(origin);
+  if (!canonicalOrigin) {
+    throw new Error('无效的网站');
+  }
+
+  if (isExcluded) {
+    await flushActiveSession(now);
+  }
+
+  await setOriginExcluded(canonicalOrigin, isExcluded);
   await refreshActiveSession();
 }
 

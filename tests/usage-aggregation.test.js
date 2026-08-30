@@ -110,3 +110,15 @@ test('aggregateUsage returns only the top ten rows while keeping the full total'
   ]);
   assert.equal(result.totalSeconds, 78);
 });
+
+test('aggregateUsage hides excluded origins from rows and totals', () => {
+  const result = aggregateUsage(
+    usageByDate,
+    'total',
+    new Date(2026, 6, 4),
+    ['https://www.youtube.com', 'https://old.example'],
+  );
+
+  assert.deepEqual(result.rows.map((row) => row.origin), ['https://github.com']);
+  assert.equal(result.totalSeconds, 60);
+});

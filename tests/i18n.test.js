@@ -38,6 +38,29 @@ test('getTranslation resolves mapped popup copy by language', () => {
   assert.equal(getTranslation('en', 'settings.languages.en'), 'English');
 });
 
+test('getTranslation resolves exclusion list copy in both languages', () => {
+  const copy = [
+    ['settings.excludedSitesLabel'],
+    ['settings.excludedSitesHint'],
+    ['settings.excludedSitesEmpty'],
+    ['settings.exitExclusionButton'],
+    ['exclude.button'],
+    ['exclude.ariaLabel'],
+    ['exclude.confirm'],
+    ['exclude.success'],
+    ['exclude.error'],
+    ['exitExclusion.ariaLabel'],
+    ['exitExclusion.confirm'],
+    ['exitExclusion.success'],
+    ['exitExclusion.error'],
+  ];
+
+  for (const [key] of copy) {
+    assert.notEqual(getTranslation('zh', key), key);
+    assert.notEqual(getTranslation('en', key), key);
+  }
+});
+
 test('isSupportedLanguage only accepts the two popup languages', () => {
   assert.equal(isSupportedLanguage('zh'), true);
   assert.equal(isSupportedLanguage('en'), true);

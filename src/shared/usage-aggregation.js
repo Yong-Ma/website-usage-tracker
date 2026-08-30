@@ -2,14 +2,24 @@ import { getLocalDateKey, getRecentDateKeys } from './site-utils.js';
 
 const MAX_RANKING_ROWS = 10;
 
-export function aggregateUsage(usageByDate = {}, range = 'today', today = new Date()) {
+export function aggregateUsage(
+  usageByDate = {},
+  range = 'today',
+  today = new Date(),
+  excludedOrigins = [],
+) {
   const dateKeys = getDateKeysForRange(usageByDate, range, today);
+  const excludedOriginSet = new Set(excludedOrigins ?? []);
   const byOrigin = new Map();
 
   for (const dateKey of dateKeys) {
     const sites = usageByDate?.[dateKey] ?? {};
     for (const record of Object.values(sites)) {
-      if (!record?.origin || !Number.isFinite(record.seconds)) {
+      if (
+        !record?.origin
+        || excludedOriginSet.has(record.origin)
+        || !Number.isFinite(record.seconds)
+      ) {
         continue;
       }
 

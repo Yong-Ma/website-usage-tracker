@@ -5,7 +5,9 @@ import {
   clearUsageForRange,
   deleteUsageForOrigin,
   isTrackingPaused,
+  readExcludedOrigins,
   setTrackingPaused,
+  setOriginExcluded,
 } from '../src/background/storage.js';
 
 function createMemoryStorage(initialData = {}) {
@@ -161,4 +163,29 @@ test('tracking pause setting defaults to off and persists boolean values', async
 
   await setTrackingPaused(false, storage);
   assert.equal(await isTrackingPaused(storage), false);
+});
+
+test('excluded origins default to an empty list and persist one canonical origin', async () => {
+  const storage = createMemoryStorage();
+
+  assert.deepEqual(await readExcludedOrigins(storage), []);
+
+  await setOriginExcluded('https://github.com', true, storage);
+
+  assert.deepEqual(await readExcludedOrigins(storage), ['https://github.com']);
+});
+
+test('adding an excluded origin ignores duplicates and removing it restores the list', async () => {
+  const storage = createMemoryStorage({
+    excludedOrigins: ['https://github.com', 'https://example.com'],
+  });
+
+  await setOriginExcluded('https://github.com', true, storage);
+  assert.deepEqual(storage.data.excludedOrigins, [
+    'https://github.com',
+    'https://example.com',
+  ]);
+
+  await setOriginExcluded('https://github.com', false, storage);
+  assert.deepEqual(await readExcludedOrigins(storage), ['https://example.com']);
 });
