@@ -12,6 +12,7 @@ Website Time Board is a lightweight Chrome/Chromium browser extension that track
 - Clear statistics for the selected time range
 - Delete an individual website from the selected range
 - Pause and resume time tracking
+- Export all data and restore it after reinstalling
 - Switch between Chinese and English
 - Store data locally in the browser without sending it to third-party services
 
@@ -28,6 +29,10 @@ Website Time Board is a lightweight Chrome/Chromium browser extension that track
 3. Enable **Developer mode**.
 4. Click **Load unpacked** and select the project root directory.
 5. Browse a website for a while, then click the extension icon in the toolbar to view the statistics.
+
+### Back up data before reinstalling
+
+Before uninstalling and reinstalling the extension, open Settings from the top-right corner of the popup and click “Export data” to save a JSON backup. After reinstalling, click “Import and restore” and select that file to restore usage statistics, tracking pause state, language, and excluded websites.
 
 ## Local development
 
