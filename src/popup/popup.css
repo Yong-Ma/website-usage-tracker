@@ -513,8 +513,13 @@ button {
   cursor: pointer;
   font-size: 12px;
   font-weight: 750;
+  opacity: 0;
+  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.site-row:hover .site-exclude-button,
+.site-row:focus-within .site-exclude-button {
   opacity: 1;
-  transition: background 120ms ease, border-color 120ms ease;
 }
 
 .site-exclude-button:hover:not(:disabled),

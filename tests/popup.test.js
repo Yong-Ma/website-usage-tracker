@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { getLocalDateKey } from '../src/shared/site-utils.js';
 
 class FakeElement {
@@ -30,6 +31,13 @@ class FakeElement {
 function textOf(element) {
   return [element.textContent, ...element.children.map(textOf)].join(' ');
 }
+
+test('exclude action stays hidden until its site row is hovered or focused', async () => {
+  const css = await readFile(new URL('../src/popup/popup.css', import.meta.url), 'utf8');
+  assert.match(css, /\.site-exclude-button[\s\S]*?opacity:\s*0;/);
+  assert.match(css, /\.site-row:hover \.site-exclude-button/);
+  assert.match(css, /\.site-row:focus-within \.site-exclude-button/);
+});
 
 async function loadPopup({ excludedOrigins = [], runtimeResponse = { ok: true } } = {}) {
   const ids = ['app-title', 'summary-label', 'summary-value', 'site-list', 'empty-state', 'range-tabs', 'clear-today', 'clear-status', 'settings-toggle', 'settings-panel', 'pause-tracking-label', 'pause-tracking-hint', 'pause-tracking-switch', 'language-setting-label', 'backup-setting-label', 'export-data', 'import-data', 'import-file', 'leaderboard', 'excluded-sites-label', 'excluded-sites-hint', 'excluded-sites'];
