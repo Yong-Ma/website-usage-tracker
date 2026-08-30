@@ -11,6 +11,7 @@ import {
 const STORAGE_KEY = 'usageByDate';
 const LANGUAGE_STORAGE_KEY = 'popupLanguage';
 const TRACKING_PAUSED_STORAGE_KEY = 'trackingPaused';
+const EXCLUDED_ORIGINS_STORAGE_KEY = 'excludedOrigins';
 const FALLBACK_ICON = '../../assets/icon.svg';
 
 const state = {
@@ -18,6 +19,7 @@ const state = {
   language: 'en',
   isTrackingPaused: false,
   usageByDate: {},
+  excludedOrigins: [],
 };
 
 const appTitle = document.querySelector('#app-title');
@@ -45,13 +47,15 @@ const leaderboard = document.querySelector('#leaderboard');
 initPopup();
 
 async function initPopup() {
-  const [usageByDate, savedLanguage, isTrackingPaused] = await Promise.all([
+  const [usageByDate, savedLanguage, isTrackingPaused, excludedOrigins] = await Promise.all([
     loadUsageByDate(),
     loadSavedLanguage(),
     loadTrackingPaused(),
+    loadExcludedOrigins(),
   ]);
   state.usageByDate = usageByDate;
   state.isTrackingPaused = isTrackingPaused;
+  state.excludedOrigins = excludedOrigins;
   state.language = getInitialLanguage({
     savedLanguage,
     navigatorLanguages: navigator.languages || [],
@@ -81,6 +85,13 @@ async function loadSavedLanguage() {
 async function loadTrackingPaused() {
   const result = await chrome.storage.local.get(TRACKING_PAUSED_STORAGE_KEY);
   return result?.[TRACKING_PAUSED_STORAGE_KEY] === true;
+}
+
+async function loadExcludedOrigins() {
+  const result = await chrome.storage.local.get(EXCLUDED_ORIGINS_STORAGE_KEY);
+  return Array.isArray(result?.[EXCLUDED_ORIGINS_STORAGE_KEY])
+    ? result[EXCLUDED_ORIGINS_STORAGE_KEY].filter((origin) => typeof origin === 'string')
+    : [];
 }
 
 function bindRangeTabs() {
@@ -257,13 +268,15 @@ async function importBackupFile(file) {
       throw new Error(response?.error || t('backup.import.error'));
     }
 
-    const [usageByDate, savedLanguage, isTrackingPaused] = await Promise.all([
+    const [usageByDate, savedLanguage, isTrackingPaused, excludedOrigins] = await Promise.all([
       loadUsageByDate(),
       loadSavedLanguage(),
       loadTrackingPaused(),
+      loadExcludedOrigins(),
     ]);
     state.usageByDate = usageByDate;
     state.isTrackingPaused = isTrackingPaused;
+    state.excludedOrigins = excludedOrigins;
     state.language = getInitialLanguage({
       savedLanguage,
       navigatorLanguages: navigator.languages || [],
@@ -288,7 +301,12 @@ function setBackupPending(isPending) {
 }
 
 function render() {
-  const { rows, totalSeconds } = aggregateUsage(state.usageByDate, state.range);
+  const { rows, totalSeconds } = aggregateUsage(
+    state.usageByDate,
+    state.range,
+    new Date(),
+    state.excludedOrigins,
+  );
   applyStaticCopy();
   summaryLabel.textContent = t(`summary.${state.range}`);
   summaryValue.textContent = formatDuration(totalSeconds, state.language);
@@ -316,6 +334,42 @@ function applyStaticCopy() {
   emptyState.textContent = t('emptyState');
   renderPauseTrackingSwitch();
   renderLanguageOptions();
+  renderExcludedSites();
+}
+
+function renderExcludedSites() {
+  const container = document.querySelector('#excluded-sites');
+  const label = document.querySelector('#excluded-sites-label');
+  const hint = document.querySelector('#excluded-sites-hint');
+  label.textContent = t('settings.excludedSitesLabel');
+  hint.textContent = t('settings.excludedSitesHint');
+  container.replaceChildren();
+  if (state.excludedOrigins.length === 0) {
+    const empty = document.createElement('span');
+    empty.className = 'setting-hint';
+    empty.textContent = t('settings.excludedSitesEmpty');
+    container.append(empty);
+    return;
+  }
+  for (const origin of state.excludedOrigins) {
+    const row = document.createElement('div');
+    row.className = 'excluded-site';
+    const text = document.createElement('span');
+    text.className = 'excluded-site-origin';
+    text.textContent = origin;
+    text.title = origin;
+    const button = document.createElement('button');
+    button.className = 'excluded-site-button';
+    button.type = 'button';
+    button.textContent = t('settings.exitExclusionButton');
+    button.setAttribute('aria-label', t('exitExclusion.ariaLabel', { origin }));
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      setOriginExcluded(origin, false, button);
+    });
+    row.append(text, button);
+    container.append(row);
+  }
 }
 
 function renderPauseTrackingSwitch() {
@@ -396,10 +450,40 @@ function renderRows(rows) {
       deleteSiteUsage(row, deleteButton);
     });
 
+    const excludeButton = document.createElement('button');
+    excludeButton.className = 'site-exclude-button';
+    excludeButton.type = 'button';
+    excludeButton.textContent = t('exclude.button');
+    excludeButton.title = t('exclude.ariaLabel', { origin: row.origin });
+    excludeButton.setAttribute('aria-label', t('exclude.ariaLabel', { origin: row.origin }));
+    excludeButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      setOriginExcluded(row.origin, true, excludeButton);
+    });
+
     meta.append(rank, origin);
-    item.append(icon, meta, duration, deleteButton);
+    item.append(icon, meta, duration, deleteButton, excludeButton);
     siteList.append(item);
   });
+}
+
+async function setOriginExcluded(origin, isExcluded, button) {
+  if (!window.confirm(t(isExcluded ? 'exclude.confirm' : 'exitExclusion.confirm', { origin }))) return;
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  setClearStatus('');
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'setOriginExcluded', origin, isExcluded });
+    if (!response?.ok) throw new Error('setOriginExcluded failed');
+    state.usageByDate = await loadUsageByDate();
+    state.excludedOrigins = await loadExcludedOrigins();
+    render();
+    setClearStatus(t(isExcluded ? 'exclude.success' : 'exitExclusion.success', { origin }));
+  } catch {
+    button.disabled = false;
+    button.setAttribute('aria-busy', 'false');
+    setClearStatus(t(isExcluded ? 'exclude.error' : 'exitExclusion.error'), true);
+  }
 }
 
 async function deleteSiteUsage(row, deleteButton) {
