@@ -39,6 +39,17 @@ test('exclude action stays hidden until its site row is hovered or focused', asy
   assert.match(css, /\.site-row:focus-within \.site-exclude-button/);
 });
 
+test('site row groups delete and exclude controls in a hover actions wrapper', { concurrency: false }, async () => {
+  const { elements } = await loadPopup();
+  const row = elements['site-list'].children[0];
+  const actions = row.children.at(-1);
+
+  assert.equal(actions.className, 'site-row-actions');
+  assert.equal(actions.children.length, 2);
+  assert.equal(actions.children[0].className, 'site-delete-button');
+  assert.equal(actions.children[1].className, 'site-exclude-button');
+});
+
 async function loadPopup({ excludedOrigins = [], runtimeResponse = { ok: true } } = {}) {
   const ids = ['app-title', 'summary-label', 'summary-value', 'site-list', 'empty-state', 'range-tabs', 'clear-today', 'clear-status', 'settings-toggle', 'settings-panel', 'pause-tracking-label', 'pause-tracking-hint', 'pause-tracking-switch', 'language-setting-label', 'backup-setting-label', 'export-data', 'import-data', 'import-file', 'leaderboard', 'excluded-sites-label', 'excluded-sites-hint', 'excluded-sites'];
   const elements = Object.fromEntries(ids.map((id) => [id, new FakeElement('div', id)]));
@@ -81,7 +92,7 @@ async function loadPopup({ excludedOrigins = [], runtimeResponse = { ok: true } 
 
 test('excluding a listed origin sends setOriginExcluded and removes it after storage refresh', { concurrency: false }, async () => {
   const { elements, sent, data } = await loadPopup();
-  const button = elements['site-list'].children[0].children.at(-1);
+  const button = elements['site-list'].children[0].children.at(-1).children.at(-1);
   await button.click();
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.deepEqual(sent.at(-1), { type: 'setOriginExcluded', origin: 'https://github.com', isExcluded: true });
@@ -98,7 +109,7 @@ test('settings renders excluded origins and restores one through setOriginExclud
 
 test('a failed exclusion response leaves the origin visible and re-enables its button', { concurrency: false }, async () => {
   const { elements } = await loadPopup({ runtimeResponse: { ok: false } });
-  const button = elements['site-list'].children[0].children.at(-1);
+  const button = elements['site-list'].children[0].children.at(-1).children.at(-1);
   await button.click();
   assert.match(textOf(elements['site-list']), /github\.com/);
   assert.equal(button.disabled, false);

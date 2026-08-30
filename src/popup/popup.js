@@ -461,8 +461,12 @@ function renderRows(rows) {
       setOriginExcluded(row.origin, true, excludeButton);
     });
 
+    const actions = document.createElement('div');
+    actions.className = 'site-row-actions';
+    actions.append(deleteButton, excludeButton);
+
     meta.append(rank, origin);
-    item.append(icon, meta, duration, deleteButton, excludeButton);
+    item.append(icon, meta, duration, actions);
     siteList.append(item);
   });
 }
