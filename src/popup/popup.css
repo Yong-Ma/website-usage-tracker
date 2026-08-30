@@ -423,8 +423,9 @@ button {
 }
 
 .site-row {
+  position: relative;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto auto auto;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   min-height: 58px;
@@ -471,6 +472,26 @@ button {
   white-space: nowrap;
 }
 
+.site-row-actions {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  padding-left: 8px;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: opacity 120ms ease;
+}
+
+.site-row:hover .site-row-actions,
+.site-row:focus-within .site-row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .site-delete-button {
   width: 38px;
   height: 30px;
@@ -482,13 +503,7 @@ button {
   cursor: pointer;
   font-size: 12px;
   font-weight: 750;
-  opacity: 0;
-  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease;
-}
-
-.site-row:hover .site-delete-button,
-.site-row:focus-within .site-delete-button {
-  opacity: 1;
+  transition: background 120ms ease, border-color 120ms ease;
 }
 
 .site-delete-button:hover:not(:disabled),
@@ -513,13 +528,7 @@ button {
   cursor: pointer;
   font-size: 12px;
   font-weight: 750;
-  opacity: 0;
-  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease;
-}
-
-.site-row:hover .site-exclude-button,
-.site-row:focus-within .site-exclude-button {
-  opacity: 1;
+  transition: background 120ms ease, border-color 120ms ease;
 }
 
 .site-exclude-button:hover:not(:disabled),

@@ -32,11 +32,12 @@ function textOf(element) {
   return [element.textContent, ...element.children.map(textOf)].join(' ');
 }
 
-test('exclude action stays hidden until its site row is hovered or focused', async () => {
+test('site actions stay hidden until their row is hovered or focused', async () => {
   const css = await readFile(new URL('../src/popup/popup.css', import.meta.url), 'utf8');
-  assert.match(css, /\.site-exclude-button[\s\S]*?opacity:\s*0;/);
-  assert.match(css, /\.site-row:hover \.site-exclude-button/);
-  assert.match(css, /\.site-row:focus-within \.site-exclude-button/);
+  assert.match(css, /\.site-row\s*\{[\s\S]*?grid-template-columns:\s*34px minmax\(0, 1fr\) auto;/);
+  assert.match(css, /\.site-row-actions\s*\{[\s\S]*?position:\s*absolute;/);
+  assert.match(css, /\.site-row-actions\s*\{[\s\S]*?opacity:\s*0;/);
+  assert.match(css, /\.site-row:hover \.site-row-actions,[\s\S]*?\.site-row:focus-within \.site-row-actions\s*\{[\s\S]*?opacity:\s*1;/);
 });
 
 test('site row groups delete and exclude controls in a hover actions wrapper', { concurrency: false }, async () => {
