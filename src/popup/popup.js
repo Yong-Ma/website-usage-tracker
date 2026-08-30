@@ -1,5 +1,7 @@
 import { aggregateUsage } from '../shared/usage-aggregation.js';
 import { formatDuration } from '../shared/site-utils.js';
+import { serializeBackup, parseBackup } from '../shared/backup.js';
+import { readAllData } from '../background/storage.js';
 import {
   getInitialLanguage,
   getTranslation,
@@ -34,6 +36,10 @@ const pauseTrackingHint = document.querySelector('#pause-tracking-hint');
 const pauseTrackingSwitch = document.querySelector('#pause-tracking-switch');
 const languageSettingLabel = document.querySelector('#language-setting-label');
 const languageOptions = [...document.querySelectorAll('.language-option')];
+const backupSettingLabel = document.querySelector('#backup-setting-label');
+const exportDataButton = document.querySelector('#export-data');
+const importDataButton = document.querySelector('#import-data');
+const importFileInput = document.querySelector('#import-file');
 const leaderboard = document.querySelector('#leaderboard');
 
 initPopup();
@@ -54,6 +60,7 @@ async function initPopup() {
   bindRangeTabs();
   bindClearButton();
   bindSettings();
+  bindBackupControls();
   render();
 }
 
@@ -178,6 +185,108 @@ function bindSettings() {
   });
 }
 
+function bindBackupControls() {
+  exportDataButton.addEventListener('click', exportBackup);
+  importDataButton.addEventListener('click', () => {
+    if (!importDataButton.disabled) {
+      importFileInput.click();
+    }
+  });
+  importFileInput.addEventListener('change', () => {
+    const file = importFileInput.files?.[0];
+    importBackupFile(file).finally(() => {
+      importFileInput.value = '';
+    });
+  });
+}
+
+async function exportBackup() {
+  setBackupPending(true);
+  setClearStatus('');
+
+  try {
+    const json = serializeBackup(await readAllData());
+    const blob = new Blob([json], { type: 'application/json' });
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+      const date = new Date().toISOString().slice(0, 10);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `website-usage-tracker-backup-${date}.json`;
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      link.remove();
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+    setClearStatus(t('backup.export.success'));
+  } catch {
+    setClearStatus(t('backup.export.error'), true);
+  } finally {
+    setBackupPending(false);
+  }
+}
+
+async function importBackupFile(file) {
+  if (!file) {
+    return;
+  }
+
+  setBackupPending(true);
+  setClearStatus('');
+
+  try {
+    let data;
+    try {
+      data = parseBackup(await file.text());
+    } catch {
+      setClearStatus(t('backup.import.invalid'), true);
+      return;
+    }
+
+    if (!window.confirm(t('backup.import.confirm'))) {
+      return;
+    }
+
+    const response = await chrome.runtime.sendMessage({
+      type: 'importBackup',
+      data,
+    });
+    if (!response?.ok) {
+      throw new Error(response?.error || t('backup.import.error'));
+    }
+
+    const [usageByDate, savedLanguage, isTrackingPaused] = await Promise.all([
+      loadUsageByDate(),
+      loadSavedLanguage(),
+      loadTrackingPaused(),
+    ]);
+    state.usageByDate = usageByDate;
+    state.isTrackingPaused = isTrackingPaused;
+    state.language = getInitialLanguage({
+      savedLanguage,
+      navigatorLanguages: navigator.languages || [],
+      navigatorLanguage: navigator.language || '',
+    });
+    setSettingsOpen(false);
+    render();
+    setClearStatus(t('backup.import.success'));
+  } catch {
+    setClearStatus(t('backup.import.error'), true);
+  } finally {
+    setBackupPending(false);
+  }
+}
+
+function setBackupPending(isPending) {
+  exportDataButton.disabled = isPending;
+  importDataButton.disabled = isPending;
+  importFileInput.disabled = isPending;
+  exportDataButton.setAttribute('aria-busy', String(isPending));
+  importDataButton.setAttribute('aria-busy', String(isPending));
+}
+
 function render() {
   const { rows, totalSeconds } = aggregateUsage(state.usageByDate, state.range);
   applyStaticCopy();
@@ -197,6 +306,11 @@ function applyStaticCopy() {
   pauseTrackingLabel.textContent = t('settings.pauseTrackingLabel');
   pauseTrackingHint.textContent = t('settings.pauseTrackingHint');
   languageSettingLabel.textContent = t('settings.languageLabel');
+  backupSettingLabel.textContent = t('backup.label');
+  exportDataButton.textContent = t('backup.export.button');
+  exportDataButton.setAttribute('aria-label', t('backup.export.button'));
+  importDataButton.textContent = t('backup.import.button');
+  importDataButton.setAttribute('aria-label', t('backup.import.button'));
   rangeTabsNav.setAttribute('aria-label', t('rangeNavLabel'));
   leaderboard.setAttribute('aria-label', t('leaderboardLabel'));
   emptyState.textContent = t('emptyState');
