@@ -1,5 +1,6 @@
 import { canonicalizeUrl } from '../shared/site-utils.js';
 import { createSession, calculateElapsedSeconds } from '../shared/session.js';
+import { normalizeBackupData } from '../shared/backup.js';
 import { clearStoredSession, readStoredSession, writeStoredSession } from './session-store.js';
 import {
   addUsageSeconds,
@@ -7,6 +8,7 @@ import {
   deleteUsageForOrigin,
   isTrackingPaused,
   readExcludedOrigins,
+  writeAllData,
   setOriginExcluded,
   setTrackingPaused,
 } from './storage.js';
@@ -60,6 +62,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     && message?.type !== 'clearTodayUsage'
     && message?.type !== 'deleteUsageForOrigin'
     && message?.type !== 'setOriginExcluded'
+    && message?.type !== 'importBackup'
     && message?.type !== 'setTrackingPaused'
   ) {
     return false;
@@ -75,6 +78,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({
           ok: false,
           error: error?.message || '设置失败，请重试',
+        });
+      });
+
+    return true;
+  }
+
+  if (message?.type === 'importBackup') {
+    queueImportBackup(message.data)
+      .then(() => {
+        sendResponse({ ok: true });
+      })
+      .catch((error) => {
+        console.error('Failed to import backup', error);
+        sendResponse({
+          ok: false,
+          error: error?.message || '导入失败，请重试',
         });
       });
 
@@ -179,6 +198,22 @@ function queueSetOriginExcluded(origin, isExcluded) {
     console.error('Failed to update excluded origins', error);
   });
   return excludePromise;
+}
+
+function queueImportBackup(data) {
+  const importPromise = refreshQueue.then(() => importBackupData(data));
+  refreshQueue = importPromise.catch((error) => {
+    console.error('Failed to import backup', error);
+  });
+  return importPromise;
+}
+
+async function importBackupData(data) {
+  const normalizedData = normalizeBackupData(data);
+  await flushActiveSession();
+  await writeAllData(normalizedData);
+  activeSession = null;
+  await refreshActiveSession();
 }
 
 async function clearUsage(range, now = Date.now()) {

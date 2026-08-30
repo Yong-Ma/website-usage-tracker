@@ -138,3 +138,71 @@ test('service worker stops and resumes active sessions for excluded origins', as
   assert.deepEqual(environment.local.data.excludedOrigins, []);
   assert.equal(environment.session.data.activeUsageSession?.origin, 'https://github.com');
 });
+
+test('service worker restores a complete backup and refreshes the active session', async () => {
+  const environment = createChromeEnvironment();
+  await import('../src/background/service-worker.js?backup-import');
+  const response = await sendRuntimeMessage(environment, {
+    type: 'importBackup',
+    data: {
+      usageByDate: {
+        '2026-08-30': {
+          'https://restored.example': { seconds: 300 },
+        },
+      },
+      trackingPaused: false,
+      excludedOrigins: ['https://blocked.example'],
+      popupLanguage: 'zh',
+    },
+  });
+  await waitForAsyncWork();
+
+  assert.equal(response.ok, true);
+  assert.deepEqual(environment.local.data.usageByDate, {
+    '2026-08-30': {
+      'https://restored.example': { seconds: 300 },
+    },
+  });
+  assert.equal(environment.local.data.trackingPaused, false);
+  assert.deepEqual(environment.local.data.excludedOrigins, ['https://blocked.example']);
+  assert.equal(environment.local.data.popupLanguage, 'zh');
+  assert.equal(environment.session.data.activeUsageSession?.origin, 'https://github.com');
+});
+
+test('service worker does not keep an active session when an imported backup is paused', async () => {
+  const environment = createChromeEnvironment();
+  await import('../src/background/service-worker.js?backup-import-paused');
+  const response = await sendRuntimeMessage(environment, {
+    type: 'importBackup',
+    data: {
+      usageByDate: {},
+      trackingPaused: true,
+      excludedOrigins: [],
+      popupLanguage: 'en',
+    },
+  });
+  await waitForAsyncWork();
+
+  assert.equal(response.ok, true);
+  assert.equal(environment.local.data.trackingPaused, true);
+  assert.equal(environment.session.data.activeUsageSession, undefined);
+});
+
+test('service worker rejects invalid backup data without changing storage', async () => {
+  const environment = createChromeEnvironment();
+  await import('../src/background/service-worker.js?backup-import-invalid');
+  await waitForAsyncWork();
+  const before = structuredClone(environment.local.data);
+  const response = await sendRuntimeMessage(environment, {
+    type: 'importBackup',
+    data: {
+      usageByDate: [],
+      trackingPaused: false,
+      excludedOrigins: [],
+      popupLanguage: 'en',
+    },
+  });
+
+  assert.equal(response.ok, false);
+  assert.deepEqual(environment.local.data, before);
+});
