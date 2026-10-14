@@ -53,6 +53,9 @@ test('getTranslation resolves exclusion list copy in both languages', () => {
     ['exitExclusion.confirm'],
     ['exitExclusion.success'],
     ['exitExclusion.error'],
+    ['open.button'],
+    ['open.ariaLabel'],
+    ['open.error'],
   ];
 
   for (const [key] of copy) {

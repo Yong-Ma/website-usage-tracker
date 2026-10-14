@@ -58,6 +58,11 @@ export const TRANSLATIONS = {
       success: '已删除 {origin}',
       error: '删除失败，请重试',
     },
+    open: {
+      button: '打开',
+      ariaLabel: '打开 {origin}',
+      error: '无法打开网站，请重试',
+    },
     exclude: {
       button: '排除',
       ariaLabel: '排除 {origin}',
@@ -143,6 +148,11 @@ export const TRANSLATIONS = {
       confirm: 'Delete {origin} from the current range?',
       success: 'Deleted {origin}',
       error: 'Delete failed. Please try again.',
+    },
+    open: {
+      button: 'Open',
+      ariaLabel: 'Open {origin}',
+      error: 'Could not open the website. Please try again.',
     },
     exclude: {
       button: 'Exclude',

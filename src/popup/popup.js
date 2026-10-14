@@ -439,6 +439,22 @@ function renderRows(rows) {
     duration.className = 'site-duration';
     duration.textContent = formatDuration(row.seconds, state.language);
 
+    const openButton = document.createElement('button');
+    openButton.className = 'site-open-button';
+    openButton.type = 'button';
+    openButton.textContent = t('open.button');
+    openButton.title = t('open.ariaLabel', { origin: row.origin });
+    openButton.setAttribute('aria-label', t('open.ariaLabel', { origin: row.origin }));
+    openButton.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      setClearStatus('');
+      try {
+        await chrome.tabs.create({ url: row.origin });
+      } catch {
+        setClearStatus(t('open.error'), true);
+      }
+    });
+
     const deleteButton = document.createElement('button');
     deleteButton.className = 'site-delete-button';
     deleteButton.type = 'button';
@@ -463,7 +479,7 @@ function renderRows(rows) {
 
     const actions = document.createElement('div');
     actions.className = 'site-row-actions';
-    actions.append(deleteButton, excludeButton);
+    actions.append(openButton, deleteButton, excludeButton);
 
     meta.append(rank, origin);
     item.append(icon, meta, duration, actions);

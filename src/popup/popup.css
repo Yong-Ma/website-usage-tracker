@@ -517,6 +517,26 @@ button {
   opacity: 0.7;
 }
 
+.site-open-button {
+  width: 38px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #b2ddff;
+  border-radius: 7px;
+  background: #eff8ff;
+  color: #175cd3;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.site-open-button:hover:not(:disabled),
+.site-open-button:focus-visible {
+  border-color: #84caff;
+  background: #d1e9ff;
+}
+
 .site-exclude-button {
   width: 38px;
   height: 30px;

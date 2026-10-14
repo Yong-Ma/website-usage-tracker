@@ -40,18 +40,23 @@ test('site actions stay hidden until their row is hovered or focused', async () 
   assert.match(css, /\.site-row:hover \.site-row-actions,[\s\S]*?\.site-row:focus-within \.site-row-actions\s*\{[\s\S]*?opacity:\s*1;/);
 });
 
-test('site row groups delete and exclude controls in a hover actions wrapper', { concurrency: false }, async () => {
+test('site row groups open, delete, and exclude controls in a hover actions wrapper', { concurrency: false }, async () => {
   const { elements } = await loadPopup();
   const row = elements['site-list'].children[0];
   const actions = row.children.at(-1);
 
   assert.equal(actions.className, 'site-row-actions');
-  assert.equal(actions.children.length, 2);
-  assert.equal(actions.children[0].className, 'site-delete-button');
-  assert.equal(actions.children[1].className, 'site-exclude-button');
+  assert.equal(actions.children.length, 3);
+  assert.equal(actions.children[0].className, 'site-open-button');
+  assert.equal(actions.children[1].className, 'site-delete-button');
+  assert.equal(actions.children[2].className, 'site-exclude-button');
 });
 
-async function loadPopup({ excludedOrigins = [], runtimeResponse = { ok: true } } = {}) {
+async function loadPopup({
+  excludedOrigins = [],
+  runtimeResponse = { ok: true },
+  tabsCreateError = null,
+} = {}) {
   const ids = ['app-title', 'summary-label', 'summary-value', 'site-list', 'empty-state', 'range-tabs', 'clear-today', 'clear-status', 'settings-toggle', 'settings-panel', 'pause-tracking-label', 'pause-tracking-hint', 'pause-tracking-switch', 'language-setting-label', 'backup-setting-label', 'export-data', 'import-data', 'import-file', 'leaderboard', 'excluded-sites-label', 'excluded-sites-hint', 'excluded-sites'];
   const elements = Object.fromEntries(ids.map((id) => [id, new FakeElement('div', id)]));
   elements['clear-today'].click = FakeElement.prototype.click.bind(elements['clear-today']);
@@ -71,6 +76,7 @@ async function loadPopup({ excludedOrigins = [], runtimeResponse = { ok: true } 
   const usageByDate = { [today]: { github: { origin: 'https://github.com', seconds: 120, lastVisitedAt: 1 } } };
   const data = { usageByDate, popupLanguage: 'en', trackingPaused: false, excludedOrigins };
   const sent = [];
+  const openedTabs = [];
   globalThis.chrome = {
     storage: { local: {
       async get(key) { return { [key]: data[key] }; },
@@ -85,11 +91,36 @@ async function loadPopup({ excludedOrigins = [], runtimeResponse = { ok: true } 
       }
       return runtimeResponse;
     } },
+    tabs: { async create(createProperties) {
+      if (tabsCreateError) {
+        throw tabsCreateError;
+      }
+      openedTabs.push(createProperties);
+    } },
   };
   await import(`../src/popup/popup.js?test=${Date.now()}-${Math.random()}`);
   await new Promise((resolve) => setTimeout(resolve, 0));
-  return { elements, tabs, sent, data };
+  return { elements, tabs, sent, data, openedTabs };
 }
+
+test('opening a listed origin creates a new tab for its full URL', { concurrency: false }, async () => {
+  const { elements, openedTabs } = await loadPopup();
+  const button = elements['site-list'].children[0].children.at(-1).children[0];
+
+  await button.click();
+
+  assert.deepEqual(openedTabs, [{ url: 'https://github.com' }]);
+});
+
+test('a failed tab creation reports an opening error', { concurrency: false }, async () => {
+  const { elements } = await loadPopup({ tabsCreateError: new Error('tabs unavailable') });
+  const button = elements['site-list'].children[0].children.at(-1).children[0];
+
+  await button.click();
+
+  assert.equal(elements['clear-status'].textContent, 'Could not open the website. Please try again.');
+  assert.match(elements['clear-status'].className, /is-error/);
+});
 
 test('excluding a listed origin sends setOriginExcluded and removes it after storage refresh', { concurrency: false }, async () => {
   const { elements, sent, data } = await loadPopup();
