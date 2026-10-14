@@ -9,18 +9,19 @@ Website Time Board is a lightweight Chrome/Chromium browser extension that track
 - View usage for **Today**, **7 days**, or **Total**
 - Rank websites from the longest usage time to the shortest
 - Show site icons, domains, and formatted durations
-- Clear statistics for the selected time range
-- Delete an individual website from the selected range
-- Pause and resume time tracking
+- Clear statistics for the selected range, or delete an individual website's records in that range
+- Exclude websites from tracking, and remove exclusions in Settings
+- Pause and resume website time tracking
 - Export all data and restore it after reinstalling
 - Switch between Chinese and English
 - Store data locally in the browser without sending it to third-party services
 
 ## Screenshots
 
-| Usage leaderboard | Settings panel |
-| --- | --- |
-| ![Website usage leaderboard](assets/readme-usage-board.png) | ![Settings panel](assets/readme-settings-menu.png) |
+| Interface language | Usage leaderboard | Settings panel |
+| --- | --- | --- |
+| 简体中文 | ![Chinese website usage leaderboard](assets/readme-usage-board.zh-CN.png) | ![Chinese settings panel](assets/readme-settings-menu.zh-CN.png) |
+| English | ![English website usage leaderboard](assets/readme-usage-board.en.png) | ![English settings panel](assets/readme-settings-menu.en.png) |
 
 ## Installation (developer mode)
 
