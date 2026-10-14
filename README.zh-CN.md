@@ -18,10 +18,9 @@
 
 ## 界面预览
 
-| 中文界面 | 使用时长榜单 | 设置面板 |
-| --- | --- | --- |
-| 简体中文 | ![中文网站使用时长榜单](assets/readme-usage-board.zh-CN.png) | ![中文设置面板](assets/readme-settings-menu.zh-CN.png) |
-| English | ![英文网站使用时长榜单](assets/readme-usage-board.en.png) | ![英文设置面板](assets/readme-settings-menu.en.png) |
+| 使用时长榜单 | 设置面板 |
+| --- | --- |
+| ![中文网站使用时长榜单](assets/readme-usage-board.zh-CN.png) | ![中文设置面板](assets/readme-settings-menu.zh-CN.png) |
 
 ## 安装（开发者模式）
 

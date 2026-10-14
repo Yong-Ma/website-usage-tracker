@@ -18,10 +18,9 @@ Website Time Board is a lightweight Chrome/Chromium browser extension that track
 
 ## Screenshots
 
-| Interface language | Usage leaderboard | Settings panel |
-| --- | --- | --- |
-| 简体中文 | ![Chinese website usage leaderboard](assets/readme-usage-board.zh-CN.png) | ![Chinese settings panel](assets/readme-settings-menu.zh-CN.png) |
-| English | ![English website usage leaderboard](assets/readme-usage-board.en.png) | ![English settings panel](assets/readme-settings-menu.en.png) |
+| Usage leaderboard | Settings panel |
+| --- | --- |
+| ![English website usage leaderboard](assets/readme-usage-board.en.png) | ![English settings panel](assets/readme-settings-menu.en.png) |
 
 ## Installation (developer mode)
 
