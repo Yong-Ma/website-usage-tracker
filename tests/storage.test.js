@@ -41,6 +41,8 @@ test('readAllData returns normalized persistent extension data', async () => {
     trackingPaused: true,
     excludedOrigins: ['https://github.com'],
     popupLanguage: 'zh',
+    weeklyReportSettings: { enabled: false, weekday: 7, time: '21:00' },
+    weeklyReports: [],
   });
 });
 
@@ -57,6 +59,8 @@ test('readAllData uses safe defaults for missing or invalid settings', async () 
     trackingPaused: false,
     excludedOrigins: [],
     popupLanguage: 'en',
+    weeklyReportSettings: { enabled: false, weekday: 7, time: '21:00' },
+    weeklyReports: [],
   });
 });
 
@@ -72,11 +76,13 @@ test('writeAllData replaces all persistent extension data in one write', async (
     trackingPaused: true,
     excludedOrigins: ['https://github.com'],
     popupLanguage: 'zh',
+    weeklyReportSettings: { enabled: true, weekday: 7, time: '21:00' },
+    weeklyReports: [],
   };
 
   await writeAllData(data, storage);
 
-  assert.deepEqual(storage.data, data);
+  assert.deepEqual(storage.data, { ...data, weeklyReportStatus: {} });
 });
 
 test('clearUsageForDate removes only the requested local date bucket', async () => {

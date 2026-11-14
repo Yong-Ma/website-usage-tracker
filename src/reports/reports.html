@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>叙事周报</title>
+    <link rel="stylesheet" href="./reports.css">
+  </head>
+  <body>
+    <main class="reports-shell">
+      <header class="page-header">
+        <div class="brand"><img src="../../assets/icon-32.png" alt="" width="28" height="28"><span id="brand-name">网站时长榜</span></div>
+        <label class="language-control"><span id="language-label">语言</span><select id="report-language"><option value="zh">中文</option><option value="en">English</option></select></label>
+      </header>
+      <section class="intro">
+        <p class="eyebrow" id="intro-kicker">每周，留一点时间回望</p>
+        <h1 id="page-title">叙事周报</h1>
+        <p id="page-description">用一份简短的回顾，看看时间都去了哪里。</p>
+      </section>
+      <p id="page-status" role="status" aria-live="polite"></p>
+      <button type="button" id="retry-load" hidden>重新加载</button>
+      <section class="reminder-panel" aria-labelledby="reminder-title">
+        <div class="panel-heading"><h2 id="reminder-title">给回顾定个时间</h2><span class="local-badge" id="local-badge">仅保存在本机</span></div>
+        <form id="reminder-form">
+          <fieldset id="reminder-fields" disabled>
+            <div class="reminder-controls">
+              <label class="switch-label"><input id="reminder-enabled" type="checkbox" role="switch"><span id="reminder-enabled-label">每周提醒我</span></label>
+              <label><span id="weekday-label">提醒日</span><select id="reminder-weekday" required></select></label>
+              <label><span id="time-label">本地时间</span><input id="reminder-time" type="time" value="21:00" required></label>
+              <button class="primary-button" id="save-reminder" type="submit">保存设置</button>
+            </div>
+          </fieldset>
+          <p class="next-reminder" id="next-reminder"></p>
+          <p class="muted" id="range-explanation">每份周报涵盖提醒日前 7 个完整日，不含提醒当天。</p>
+          <p id="form-status" role="status" aria-live="polite"></p>
+        </form>
+        <p class="warning" id="notification-warning" hidden></p>
+        <p class="warning" id="schedule-warning" hidden></p>
+      </section>
+      <section class="history" aria-labelledby="history-title">
+        <div class="history-heading"><h2 id="history-title">时间的足迹</h2><span id="report-count" class="muted"></span></div>
+        <div class="empty-state" id="empty-state" hidden>
+          <span class="empty-mark" aria-hidden="true">↗</span>
+          <h3 id="empty-title">第一份周报，值得期待</h3>
+          <p id="empty-description">开启每周提醒后，有使用记录的周期会自动生成周报，之后可以随时在这里回看。</p>
+          <button type="button" id="enable-reminder">设置每周提醒</button>
+        </div>
+        <div class="timeline" id="report-list"></div>
+      </section>
+      <footer id="snapshot-note">周报是生成时的快照。清空使用记录不会改变已保存的周报。</footer>
+    </main>
+    <script type="module" src="./reports.js"></script>
+  </body>
+</html>

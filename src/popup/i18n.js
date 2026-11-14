@@ -2,6 +2,7 @@ export const SUPPORTED_LANGUAGES = ['zh', 'en'];
 
 export const TRANSLATIONS = {
   zh: {
+    weeklyReports: '查看周报',
     appTitle: '网站时长榜',
     settingsButtonLabel: '打开设置',
     settingsButtonTitle: '设置',
@@ -93,6 +94,7 @@ export const TRANSLATIONS = {
     },
   },
   en: {
+    weeklyReports: 'View weekly reports',
     appTitle: 'Website Time Board',
     settingsButtonLabel: 'Open settings',
     settingsButtonTitle: 'Settings',

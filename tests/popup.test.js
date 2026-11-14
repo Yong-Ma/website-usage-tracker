@@ -58,6 +58,7 @@ async function loadPopup({
   tabsCreateError = null,
 } = {}) {
   const ids = ['app-title', 'summary-label', 'summary-value', 'site-list', 'empty-state', 'range-tabs', 'clear-today', 'clear-status', 'settings-toggle', 'settings-panel', 'pause-tracking-label', 'pause-tracking-hint', 'pause-tracking-switch', 'language-setting-label', 'backup-setting-label', 'export-data', 'import-data', 'import-file', 'leaderboard', 'excluded-sites-label', 'excluded-sites-hint', 'excluded-sites'];
+  ids.push('open-reports');
   const elements = Object.fromEntries(ids.map((id) => [id, new FakeElement('div', id)]));
   elements['clear-today'].click = FakeElement.prototype.click.bind(elements['clear-today']);
   const tabs = ['today', 'week', 'total'].map((range) => { const el = new FakeElement('button'); el.dataset.range = range; return el; });
@@ -70,7 +71,7 @@ async function loadPopup({
     addEventListener() {},
     createElement(tag) { return new FakeElement(tag); },
   };
-  globalThis.navigator = { languages: ['en'], language: 'en' };
+  Object.defineProperty(globalThis, 'navigator', { value: { languages: ['en'], language: 'en' }, configurable: true });
   globalThis.window = { confirm: () => true };
   const today = getLocalDateKey(new Date());
   const usageByDate = { [today]: { github: { origin: 'https://github.com', seconds: 120, lastVisitedAt: 1 } } };
@@ -82,7 +83,7 @@ async function loadPopup({
       async get(key) { return { [key]: data[key] }; },
       async set(values) { Object.assign(data, values); },
     } },
-    runtime: { async sendMessage(message) {
+    runtime: { getURL: path => `chrome-extension://test/${path}`, async sendMessage(message) {
       sent.push(message);
       if (message.type === 'setOriginExcluded' && runtimeResponse.ok) {
         data.excludedOrigins = message.isExcluded
@@ -110,6 +111,13 @@ test('opening a listed origin creates a new tab for its full URL', { concurrency
   await button.click();
 
   assert.deepEqual(openedTabs, [{ url: 'https://github.com' }]);
+});
+
+test('popup opens the weekly report history', async () => {
+  const { elements, openedTabs } = await loadPopup();
+  assert.equal(elements['open-reports'].textContent, 'View weekly reports');
+  await elements['open-reports'].click();
+  assert.deepEqual(openedTabs, [{ url: 'chrome-extension://test/src/reports/reports.html' }]);
 });
 
 test('a failed tab creation reports an opening error', { concurrency: false }, async () => {

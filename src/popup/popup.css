@@ -9,6 +9,20 @@
   box-sizing: border-box;
 }
 
+.reports-button {
+  border: 0;
+  padding: 3px 0;
+  color: #3559c7;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.reports-button:hover { text-decoration: underline; }
+.reports-button:focus-visible { outline: 2px solid #3559c7; outline-offset: 3px; }
+.actions-row { display: flex; align-items: center; justify-content: space-between; }
+
 body {
   width: 360px;
   min-height: 430px;

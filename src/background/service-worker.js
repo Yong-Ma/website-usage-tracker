@@ -1,6 +1,10 @@
 import { canonicalizeUrl } from '../shared/site-utils.js';
 import { createSession, calculateElapsedSeconds } from '../shared/session.js';
 import { normalizeBackupData } from '../shared/backup.js';
+import {
+  WEEKLY_REPORT_ALARM, initializeWeeklyReports, generateWeeklyReport,
+  getWeeklyReportState, saveWeeklyReportSettings, scheduleWeeklyReport, openWeeklyReport,
+} from './weekly-reports.js';
 import { clearStoredSession, readStoredSession, writeStoredSession } from './session-store.js';
 import {
   addUsageSeconds,
@@ -22,11 +26,13 @@ let refreshQueue = Promise.resolve();
 chrome.runtime.onInstalled.addListener(() => {
   ensureHeartbeatAlarm();
   queueRefresh();
+  queueWeeklyWork(() => initializeWeeklyReports(flushActiveSession, refreshActiveSession));
 });
 
 chrome.runtime.onStartup.addListener(() => {
   ensureHeartbeatAlarm();
   queueRefresh();
+  queueWeeklyWork(() => initializeWeeklyReports(flushActiveSession, refreshActiveSession));
 });
 
 chrome.tabs.onActivated.addListener(() => {
@@ -53,10 +59,24 @@ chrome.idle.onStateChanged.addListener((newState) => {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'usage-heartbeat') {
     queueRefresh();
+    queueWeeklyWork(() => initializeWeeklyReports(flushActiveSession, refreshActiveSession));
+  } else if (alarm.name === WEEKLY_REPORT_ALARM) {
+    queueWeeklyWork(() => generateWeeklyReport(alarm.scheduledTime, flushActiveSession, refreshActiveSession));
   }
 });
 
+chrome.notifications.onClicked.addListener(id => {
+  queueWeeklyWork(() => openWeeklyReport(id));
+});
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.type === 'getWeeklyReports' || message?.type === 'setWeeklyReportSettings') {
+    queueWeeklyWork(() => message.type === 'getWeeklyReports'
+      ? getWeeklyReportState() : saveWeeklyReportSettings(message.settings))
+      .then(data => sendResponse({ ok: true, ...data }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
   if (
     message?.type !== 'clearUsage'
     && message?.type !== 'clearTodayUsage'
@@ -153,7 +173,14 @@ chrome.idle.queryState(60, (state) => {
   idleState = state;
   ensureHeartbeatAlarm();
   queueRefresh();
+  queueWeeklyWork(() => initializeWeeklyReports(flushActiveSession, refreshActiveSession));
 });
+
+function queueWeeklyWork(work) {
+  const result = refreshQueue.then(work);
+  refreshQueue = result.catch(error => console.error('Failed to update weekly reports', error));
+  return result;
+}
 
 function queueRefresh(updatedTab = null) {
   refreshQueue = refreshQueue
@@ -214,6 +241,7 @@ async function importBackupData(data) {
   await writeAllData(normalizedData);
   activeSession = null;
   await refreshActiveSession();
+  await scheduleWeeklyReport(true);
 }
 
 async function clearUsage(range, now = Date.now()) {

@@ -1,5 +1,8 @@
+import { normalizeWeeklyReportSettings } from './weekly-report-schedule.js';
+import { normalizeWeeklyReports } from './weekly-report-validation.js';
+
 export const BACKUP_FORMAT = 'website-usage-tracker-backup';
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 export function createBackup(data, exportedAt = new Date().toISOString()) {
   return {
@@ -25,14 +28,14 @@ export function parseBackup(text) {
   if (!isPlainObject(backup) || backup.format !== BACKUP_FORMAT) {
     throw new Error('备份文件格式不支持');
   }
-  if (backup.version !== BACKUP_VERSION) {
+  if (backup.version !== 1 && backup.version !== BACKUP_VERSION) {
     throw new Error('备份文件版本不支持');
   }
 
-  return normalizeBackupData(backup.data);
+  return normalizeBackupData(backup.data, backup.version === 2);
 }
 
-export function normalizeBackupData(data) {
+export function normalizeBackupData(data, requireWeeklyFields = false) {
   if (!isPlainObject(data) || !isPlainObject(data.usageByDate)) {
     throw new Error('usageByDate 数据无效');
   }
@@ -46,12 +49,17 @@ export function normalizeBackupData(data) {
   if (data.popupLanguage !== 'zh' && data.popupLanguage !== 'en') {
     throw new Error('语言设置无效');
   }
+  if (requireWeeklyFields && (data.weeklyReportSettings === undefined || data.weeklyReports === undefined)) {
+    throw new Error('周报数据缺失');
+  }
 
   return {
     usageByDate: data.usageByDate,
     trackingPaused: data.trackingPaused,
     excludedOrigins: [...data.excludedOrigins],
     popupLanguage: data.popupLanguage,
+    weeklyReportSettings: normalizeWeeklyReportSettings(data.weeklyReportSettings),
+    weeklyReports: normalizeWeeklyReports(data.weeklyReports),
   };
 }
 

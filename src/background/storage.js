@@ -3,6 +3,8 @@ import {
   getLocalDateKey,
   getRecentDateKeys,
 } from '../shared/site-utils.js';
+import { normalizeWeeklyReportSettings } from '../shared/weekly-report-schedule.js';
+import { normalizeWeeklyReports } from '../shared/weekly-report-validation.js';
 
 const STORAGE_KEY = 'usageByDate';
 const TRACKING_PAUSED_KEY = 'trackingPaused';
@@ -15,6 +17,8 @@ export async function readAllData(storage = chrome.storage.local) {
     TRACKING_PAUSED_KEY,
     EXCLUDED_ORIGINS_KEY,
     POPUP_LANGUAGE_KEY,
+    'weeklyReportSettings',
+    'weeklyReports',
   ]);
 
   return {
@@ -24,6 +28,8 @@ export async function readAllData(storage = chrome.storage.local) {
       ? result[EXCLUDED_ORIGINS_KEY].filter((origin) => typeof origin === 'string')
       : [],
     popupLanguage: result?.[POPUP_LANGUAGE_KEY] === 'zh' ? 'zh' : 'en',
+    weeklyReportSettings: safeWeeklySettings(result?.weeklyReportSettings),
+    weeklyReports: safeWeeklyReports(result?.weeklyReports),
   };
 }
 
@@ -33,7 +39,20 @@ export async function writeAllData(data, storage = chrome.storage.local) {
     [TRACKING_PAUSED_KEY]: data.trackingPaused,
     [EXCLUDED_ORIGINS_KEY]: data.excludedOrigins,
     [POPUP_LANGUAGE_KEY]: data.popupLanguage,
+    weeklyReportSettings: normalizeWeeklyReportSettings(data.weeklyReportSettings),
+    weeklyReports: normalizeWeeklyReports(data.weeklyReports),
+    weeklyReportStatus: {},
   });
+}
+
+function safeWeeklySettings(value) {
+  try { return normalizeWeeklyReportSettings(value); }
+  catch { return normalizeWeeklyReportSettings(); }
+}
+
+function safeWeeklyReports(value) {
+  try { return normalizeWeeklyReports(value); }
+  catch { return []; }
 }
 
 export async function readUsageByDate() {

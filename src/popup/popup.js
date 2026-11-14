@@ -65,6 +65,13 @@ async function initPopup() {
   bindClearButton();
   bindSettings();
   bindBackupControls();
+  document.querySelector('#open-reports').addEventListener('click', async () => {
+    try {
+      await chrome.tabs.create({ url: chrome.runtime.getURL('src/reports/reports.html') });
+    } catch {
+      setClearStatus(t('open.error'), true);
+    }
+  });
   render();
 }
 
@@ -319,6 +326,7 @@ function applyStaticCopy() {
   document.documentElement.lang = state.language === 'zh' ? 'zh-CN' : 'en';
   document.title = t('appTitle');
   appTitle.textContent = t('appTitle');
+  document.querySelector('#open-reports').textContent = t('weeklyReports');
   settingsToggle.setAttribute('aria-label', t('settingsButtonLabel'));
   settingsToggle.dataset.tooltip = t('settingsButtonTitle');
   pauseTrackingLabel.textContent = t('settings.pauseTrackingLabel');
